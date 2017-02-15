@@ -35,25 +35,19 @@ var (
 
 // Authorize will attempt to get an auth token from the device. Device must be put into pairing mode (hold down power button 5-7 seconds) for this to work.
 // On success will return a valid auth token.
-func (c *Client) Authorize() error {
-	resp, err := http.Post(c.url(authURL), "application/json", nil)
+func (c *Client) Authorize() (string, error) {
+	req, err := http.NewRequest("POST", c.url(authURL), nil)
 	if err != nil {
-		return err
+		return "", err
 	}
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Bad status code from nanoleaf device: %d", resp.StatusCode)
-	}
-
 	dat := &struct {
 		Token string `json:"auth_token"`
 	}{}
-	dec := json.NewDecoder(resp.Body)
-	defer resp.Body.Close()
-	if err = dec.Decode(dat); err != nil {
-		return err
+	if err = c.makeReq(req, dat); err != nil {
+		return "", err
 	}
 	c.token = dat.Token
-	return nil
+	return c.token, nil
 }
 
 type HardwareInfo struct {
@@ -113,6 +107,8 @@ type Panel struct {
 	SideLength int `json:"length"`
 }
 
+type NotAuthorized error
+
 func (c *Client) GetInfo() (*HardwareInfo, error) {
 	req, err := http.NewRequest("GET", c.url(infoURL), nil)
 	if err != nil {
@@ -146,6 +142,12 @@ func (c *Client) GetInfo() (*HardwareInfo, error) {
 
 func (c *Client) makeReq(req *http.Request, dat interface{}) error {
 	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == 403 {
+		return NotAuthorized(fmt.Errorf("Not properly authenticated to nanoleaf device."))
+	}
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Bad status code from nanoleaf device: %d", resp.StatusCode)
 	}

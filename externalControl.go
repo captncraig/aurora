@@ -26,7 +26,7 @@ func (c *Client) ActivateExtranalControl() (chan<- *PanelColorCommand, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(dat.IP, dat.Port)
+	//fmt.Println(dat.IP, dat.Port)
 	addr := fmt.Sprintf("%s:%d", dat.IP, dat.Port)
 	ch := make(chan *PanelColorCommand)
 	go externalControl(addr, ch)
@@ -56,7 +56,7 @@ func externalControl(addr string, ch <-chan *PanelColorCommand) {
 			updates = map[byte][]byte{}
 			nextPossibleSend = time.Now().Add(100 * time.Millisecond)
 			timeToSend = nil
-			fmt.Println("SENT")
+			//fmt.Println("SENT")
 		case dp := <-ch:
 			//start ticker if not going
 			if timeToSend == nil {
@@ -73,13 +73,11 @@ func externalControl(addr string, ch <-chan *PanelColorCommand) {
 }
 
 func buildUdpPacket(dat map[byte][]byte) []byte {
-
-	buf := make([]byte, 0, len(dat)*6+1)
+	buf := make([]byte, 0, (len(dat)*6)+1)
 	buf = append(buf, byte(len(dat)))
 	for id, pt := range dat {
 		buf = append(buf, id)
 		buf = append(buf, pt...)
 	}
-	fmt.Println(buf)
 	return buf
 }

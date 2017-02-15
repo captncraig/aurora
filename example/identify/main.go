@@ -5,7 +5,6 @@ import (
 
 	"github.com/captncraig/aurora"
 	"log"
-	"math/rand"
 	"time"
 )
 
@@ -22,16 +21,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for {
-		for _, p := range dat.Panels {
+	for i := 0; i < len(dat.Panels); i++ {
+		for j, p := range dat.Panels {
 			pt := &aurora.PanelColorCommand{
 				ID: byte(p.ID),
-				R:  byte(rand.Int()),
-				G:  byte(rand.Int()),
-				B:  byte(rand.Int()),
+				R:  byte(0),
+				G:  byte(0),
+				B:  byte(0),
+			}
+			if i == j {
+				pt.R = 255
+				fmt.Println("!!!!!!! ", pt.ID)
 			}
 			ch <- pt
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(2 * time.Second)
 	}
 }
